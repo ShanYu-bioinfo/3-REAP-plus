@@ -69,7 +69,7 @@ done < $sample_file
 cd ${work_path}/s1_fastq_umi
 while IFS=$' \t\r\n' read -r sample; do
     echo $sample
-    outpath=${work_path}/s2_fastq_cutadapt/${sample}"
+    outpath=${work_path}/s2_fastq_cutadapt/${sample}
     mkdir -p ${outpath}
     cutadapt --quiet -j 24 -m 18 -O 10 -g "polyT=T{20,}" -n 2 ${sample}/${sample}_R2.fastq.gz | \
     cutadapt --quiet -j 24 -m 18 -O 3 --nextseq-trim=10 -a "rd2Adapter=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT;min_overlap=3;max_error_rate=0.100000" - | \
