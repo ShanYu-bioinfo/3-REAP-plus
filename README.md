@@ -151,7 +151,7 @@ wc -l *.sorted.bed >> stats_deduped_aligned_R2_reads.txt
 ```
 
 ### step 6. Defining LAPs (last aligned positions) and matching PASs
-![LAP](./images/LAP.png)
+![LAP](./image/LAP.png)
 `-misM 2`: Allow up to 2 nt soft clipping at the ends of aligned reads.
 
 `-dist 24`: Assign LAPs to PASs in PolyA_DB within a ±24-nt window.
