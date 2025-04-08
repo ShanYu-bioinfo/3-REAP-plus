@@ -4,6 +4,8 @@
 PAS detection and quantification using paired reads of bulk 3'-seq. This pipeline require polyA or polyT containing reads.
 If you have problem, please contact Shan Yu, syu@wistar.org, Bin Tian Lab @ The Wistar Institute.
 
+![workflow](./image/workflow.png)
+
 ## Introduction
 
 ## Prerequisites
@@ -47,7 +49,7 @@ done < $sample_file
 ### step 2. Trimming adapters and polyA/polyT sequences
 Given the distinct sequence characteristics of read1 and read2 — reverse reads generally contain polyT—and their differences in sequencing quality, we process them separately.
 Please set the adapter sequences according to your data.
-**It’s important to check your FASTQ output files by reviewing sequences and running [FastQC](https://github.com/s-andrews/FastQC).**
+**It's important to ensure that polyA/polyT sequences have been removed from your FASTQ output by reviewing the reads and running [FastQC](https://github.com/s-andrews/FastQC).**
 
 #### Read1 (here forward read)
 ```bash
@@ -84,10 +86,10 @@ star_index_path=/star/index/path/STAR_index_hg38
 nrThreads=12 # cores
 
 # pair reads repair
-outpath=${work_path}/s2_fastq_cutadapt_pair
-mkdir -p ${outpath}
+inpath=${work_path}/s2_fastq_cutadapt
+outpath=${work_path}/s2_fastq_cutadapt_pair; mkdir -p ${outpath}
 while IFS=$' \t\r\n' read -r sample; do
-repair.sh in1=${fq_path}/${sample}/${sample}_R1.fastq.gz in2=${fq_path}/${sample}/${sample}_R2_trimAdapt.5Ttrimmed.fastq.gz \
+repair.sh in1=${inpath}/${sample}/${sample}_R1.fastq.gz in2=${inpath}/${sample}/${sample}_R2.fastq.gz \
            out1=${outpath}/${sample}/${sample}_R1.fastq.gz out2=${outpath}/${sample}/${sample}_R2.fastq.gz outs=${outpath}/${sample}/${sample}_unpaired.fastq.gz \
            repair
 done < $sample_file
@@ -134,14 +136,15 @@ umi_tools dedup --paired -I ${inpath}/${sample}/Aligned.sortedByCoord.out.bam -S
 done < $sample_file
 ```
 
-### step 5. Bam file to Bed
-Extract R2 read from bam file, then transform to bed.
+### step 5. BAM file to BED
+Extract R2 reads that are successfully paired and aligned to the reference genome from the BAM file, then convert them to BED format.
 ```shell
+nrThreads=12 # cores
 outdir=${work_path}/s5_R2_bed; mkdir -p $outdir; cd $outdir
 bam_path=${work_path}/s4_bam_dedup
 
 while IFS=$' \t\r\n' read -r sample; do
-    samtools view -f 128 -b ${bam_path}/${sample}/${sample}.dedup.bam > ${bam_path}/${sample}/${sample}.dedup_R2.bam
+    samtools view -@ ${nrThreads} -f 128 -F 4 -b ${bam_path}/${sample}/${sample}.dedup.bam > ${bam_path}/${sample}/${sample}.dedup_R2.bam
     samtools index ${bam_path}/${sample}/${sample}.dedup_R2.bam
     bedtools bamtobed -cigar -i ${bam_path}/${sample}/${sample}.dedup_R2.bam > ${sample}.dedup_R2.bed
     sort -k 1,1 ${sample}.dedup_R2.bed > ${sample}.dedup_R2.sorted.bed
