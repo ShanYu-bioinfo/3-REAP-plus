@@ -1,7 +1,7 @@
 # 3-REAP-paired reads
 [3'REAP (3’ Reads Enrichment using Annotated PolyA sites)](https://github.com/wly00001/3-prime-REAP)
 
-PAS detection and quantification using paired reads of bulk 3'-seq. This pipeline require polyA or polyT containing reads.
+PAS detection and quantification using paired reads of bulk 3'-seq. This pipeline requires polyA or polyT containing reads.
 If you have problem, please contact Shan Yu, syu@wistar.org, Bin Tian Lab @ The Wistar Institute.
 
 ![workflow](./image/workflow.png)
