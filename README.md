@@ -1,7 +1,7 @@
 # 3-REAP-paired reads
 [3'REAP (3’ Reads Enrichment using Annotated PolyA sites)](https://github.com/wly00001/3-prime-REAP)
 
-PAS detection and quantification using paired reads of bulk 3'-seq. This pipeline requires polyA or polyT containing reads.
+Poly(A) site (PAS) detection and quantification using paired reads of bulk 3'-seq. This pipeline requires polyA or polyT containing reads.
 If you have problem, please contact Shan Yu, syu@wistar.org, Bin Tian Lab @ The Wistar Institute.
 
 ![workflow](./image/workflow.png)
@@ -229,7 +229,7 @@ bigwig files are under `${work_path}/s7_bigwig`. We recommend `PASS_bw_LAP24_PAS
 Some QC files: `${work_path}/s3_star_align/stats_STAR_summary.csv`, `${work_path}/s5_R2_bed/stats_deduped_aligned_R2_reads.txt`, `${work_path}/s6_LAP/*_stats.csv`, `*_CIGAR_distrib.pdf` and `*_LAP_polyAdb3_distance.pdf`.
 
 ## Next
-You can annotate gene and 3'UTR/Intron for the PAS count table using PAS table from [PolyA_DBv3.2](https://exon.apps.wistar.org/polya_db/v3/), then perform APA analysis.
+You can annotate gene and 3'UTR/Intron for the PAS count table using PAS table from [PolyA_DBv3.2](https://exon.apps.wistar.org/polya_db/v3/), then perform alternative polyadenylation (APA) analysis.
 
 ## Authors
 [Shan Yu](https://github.com/ShanYu-bioinfo/), [Luyang Wang](https://github.com/wly00001), [Bin Tian](https://www.wistar.org/our-scientists/bin-tian/).
