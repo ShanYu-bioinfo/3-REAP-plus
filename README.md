@@ -1,22 +1,21 @@
 # 3-REAP-paired reads
 [3'REAP (3’ Reads Enrichment using Annotated PolyA sites)](https://github.com/wly00001/3-prime-REAP)
 
-APA analysis using paired reads of bulk 3'-seq.
+PAS detection and quantification using paired reads of bulk 3'-seq.
+If you have problem, please contact Shan Yu, syu@wistar.org, Bin Tian Lab @ The Wistar Institute.
 
 ## Introduction
 
 ## Prerequisites
 ### Tools
-umi_tools
-cutadapt
-bbmap
-STAR
-samtools
-bedtools
+[umi_tools](https://umi-tools.readthedocs.io/en/latest/index.html), [cutadapt](https://github.com/marcelm/cutadapt/), [bbmap](https://github.com/BioInfoTools/BBMap), [STAR](), [samtools](https://github.com/samtools/samtools), [bedtools](https://bedtools.readthedocs.io/en/latest/index.html)
 
 ### R packages
+tidyverse, dplyr, plyranges, GenomicRanges, GenomicAlignments, ggplot2, patchwork
+
 ### Files
 Genome reference, including fasta, chrom.sizes
+
 PAS database table: The PAS reference used in this pipeline is derived from [PolyA_DBv3.2](https://exon.apps.wistar.org/polya_db/v3/). Our fourth version of the database will be released soon—please stay tuned!
 
 ## Pipeline
@@ -146,7 +145,7 @@ while IFS=$' \t\r\n' read -r sample; do
     sort -k 1,1 ${sample}.dedup_R2.bed > ${sample}.dedup_R2.sorted.bed
 done < $sample_file
 
-wc -l *.sorted.bed >> stats_deduped_reads.txt
+wc -l *.sorted.bed >> stats_deduped_aligned_R2_reads.txt
 ```
 
 ### step 6. Defining LAPs (last aligned positions) and matching PASs
@@ -161,6 +160,11 @@ outdir=${work_path}/s6_LAP; mkdir -p $outdir
 while IFS=$' \t\r\n' read -r sample; do
 	Rscript ${script_path}/genome_LAPandPAS_define.R -bedLAP $indir/${sample}.dedup_R2.sorted.bed -out $outdir/${sample} -refPAS $refPAS_file -misM 2 -dist 24
 done < $sample_file
+
+# combine the PAS quantification table
+mkdir -p ${work_path}/s6_LAP/PAS_quant; cd ${work_path}/s6_LAP/PAS_quant
+mv ${work_path}/s6_LAP/*cluster.all.reads.csv ./
+Rscript ${script_path}/combine_all_sample_PAS_count_tables_sy.R -csv ./ -out ./cluster.all.reads.csv
 ```
 
 ### step 7. Generating bigwig files for PAS usage visualization
@@ -207,3 +211,13 @@ rm -f *.bedgraph.normolized
 rm -f *.bedgraph.normolized1
 done
 ```
+## Output description
+`${work_path}/s6_LAP/PAS_quant/cluster.all.reads.csv` is the PAS count table.
+bigwig files are under `${work_path}/s7_bigwig`. We recommend `PASS_bw_LAP24_PAS` or `PASS_bw_LAP24` for PAS usage visualization. `mapped_read` is for all aligned R2 reads .`PASS_bw_LAP24` is for PAS supporting (PASS) reads. `PASS_bw_LAP24_positon` is for PASS LAPs. `PASS_bw_LAP24_PAS` is for detected PASs. 
+Some QC files: `${work_path}/s3_star_align/stats_STAR_summary.csv`, `${work_path}/s5_R2_bed/stats_deduped_aligned_R2_reads.txt`, `${work_path}/s6_LAP/*_stats.csv`, `*_CIGAR_distrib.pdf` and `*_LAP_polyAdb3_distance.pdf`.
+
+## Next
+You can annatate gene and 3'UTR/Intron for the PAS count table using PAS table from [PolyA_DBv3.2](https://exon.apps.wistar.org/polya_db/v3/), then perform APA analysis.
+
+## Authors
+[Shan Yu](https://github.com/ShanYu-bioinfo/), [Luyang Wang](https://github.com/wly00001), [Bin Tian](https://www.wistar.org/our-scientists/bin-tian/).
