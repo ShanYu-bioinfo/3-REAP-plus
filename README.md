@@ -1,7 +1,7 @@
 # 3-REAP-paired reads
 [3'REAP (3’ Reads Enrichment using Annotated PolyA sites)](https://github.com/wly00001/3-prime-REAP)
 
-PAS detection and quantification using paired reads of bulk 3'-seq.
+PAS detection and quantification using paired reads of bulk 3'-seq. This pipeline require polyA or polyT containing reads.
 If you have problem, please contact Shan Yu, syu@wistar.org, Bin Tian Lab @ The Wistar Institute.
 
 ## Introduction
@@ -47,7 +47,7 @@ done < $sample_file
 ### step 2. Trimming adapters and polyA/polyT sequences
 Given the distinct sequence characteristics of read1 and read2 — reverse reads generally contain polyT—and their differences in sequencing quality, we process them separately.
 Please set the adapter sequences according to your data.
-**It’s important to check your FASTQ output files by reviewing sequences and running FastQC.**
+**It’s important to check your FASTQ output files by reviewing sequences and running [FastQC](https://github.com/s-andrews/FastQC).**
 
 #### Read1 (here forward read)
 ```bash
@@ -78,6 +78,7 @@ done < $sample_file
 ### step 3. Genome alignment using paired reads
 Since the fastq files were preprocessed separately, they need to be repaired to re-establish read pairing before alignment. repair.sh is a tool of bbmap.
 If you have no star index, please build one first.
+Lenient alignment parameters were used for alignment, because the reverse reads had low sequencing quality scores, and many reads became much shorter after adapter and polyT trimming.
 ```shell
 star_index_path=/star/index/path/STAR_index_hg38
 nrThreads=12 # cores
@@ -103,7 +104,6 @@ while IFS=$' \t\r\n' read -r sample; do
 done < $sample_file
 
 ## Statistical alignment rate
-#bash
 cd ${work_path}/s3_star_align
 output_file="stats_STAR_summary.csv"
 echo "Sample,Total Reads,Uniquely Mapped Reads (%),Mapped to Multiple Loci (%),Unmapped: Too Many Mismatches (%),Unmapped: Too Short (%),Unmapped: Other (%)" > $output_file
@@ -122,11 +122,13 @@ done
 ### step 4. Removing PCR duplication
 ```shell
 inpath=${work_path}/s3_star_align
+
 while IFS=$' \t\r\n' read -r sample; do
 outpath=${work_path}/s4_bam_dedup/${sample}; mkdir -p ${outpath}
     if [ ! -f $inpath/$sample/Aligned.sortedByCoord.out.bam.bai ]; then
         samtools index ${inpath}/${sample}/Aligned.sortedByCoord.out.bam
     fi
+
 umi_tools dedup --paired -I ${inpath}/${sample}/Aligned.sortedByCoord.out.bam -S ${outpath}/${sample}.dedup.bam \
 --multimapping-detection-method=NH --output-stats=${outpath}/deduplicated.txt --log=${outpath}/deduplication.log
 done < $sample_file
@@ -135,11 +137,11 @@ done < $sample_file
 ### step 5. Bam file to Bed
 Extract R2 read from bam file, then transform to bed.
 ```shell
-outdir=${work_path}/s5_R2_bed; mkdir -p $outdir
-cd $outdir
+outdir=${work_path}/s5_R2_bed; mkdir -p $outdir; cd $outdir
 bam_path=${work_path}/s4_bam_dedup
+
 while IFS=$' \t\r\n' read -r sample; do
-    samtools view -f 128 -b $mainpath/${bam_path}/${sample}/${sample}.dedup.bam > $mainpath/${bam_path}/${sample}/${sample}.dedup_R2.bam
+    samtools view -f 128 -b ${bam_path}/${sample}/${sample}.dedup.bam > ${bam_path}/${sample}/${sample}.dedup_R2.bam
     samtools index ${bam_path}/${sample}/${sample}.dedup_R2.bam
     bedtools bamtobed -cigar -i ${bam_path}/${sample}/${sample}.dedup_R2.bam > ${sample}.dedup_R2.bed
     sort -k 1,1 ${sample}.dedup_R2.bed > ${sample}.dedup_R2.sorted.bed
@@ -150,13 +152,14 @@ wc -l *.sorted.bed >> stats_deduped_aligned_R2_reads.txt
 
 ### step 6. Defining LAPs (last aligned positions) and matching PASs
 `-misM 2`: Allow up to 2 nt soft clipping at the ends of aligned reads.
+
 `-dist 24`: Assign LAPs to PASs in PolyA_DB within a ±24-nt window.
 
 ```shell
 refPAS_file=/PolyA_DBv3.2/human/human.PAS.hg38.txt
-
 indir=${work_path}/s5_R2_bed
 outdir=${work_path}/s6_LAP; mkdir -p $outdir
+
 while IFS=$' \t\r\n' read -r sample; do
 	Rscript ${script_path}/genome_LAPandPAS_define.R -bedLAP $indir/${sample}.dedup_R2.sorted.bed -out $outdir/${sample} -refPAS $refPAS_file -misM 2 -dist 24
 done < $sample_file
@@ -213,11 +216,13 @@ done
 ```
 ## Output description
 `${work_path}/s6_LAP/PAS_quant/cluster.all.reads.csv` is the PAS count table.
+
 bigwig files are under `${work_path}/s7_bigwig`. We recommend `PASS_bw_LAP24_PAS` or `PASS_bw_LAP24` for PAS usage visualization. `mapped_read` is for all aligned R2 reads .`PASS_bw_LAP24` is for PAS supporting (PASS) reads. `PASS_bw_LAP24_positon` is for PASS LAPs. `PASS_bw_LAP24_PAS` is for detected PASs. 
+
 Some QC files: `${work_path}/s3_star_align/stats_STAR_summary.csv`, `${work_path}/s5_R2_bed/stats_deduped_aligned_R2_reads.txt`, `${work_path}/s6_LAP/*_stats.csv`, `*_CIGAR_distrib.pdf` and `*_LAP_polyAdb3_distance.pdf`.
 
 ## Next
-You can annatate gene and 3'UTR/Intron for the PAS count table using PAS table from [PolyA_DBv3.2](https://exon.apps.wistar.org/polya_db/v3/), then perform APA analysis.
+You can annotate gene and 3'UTR/Intron for the PAS count table using PAS table from [PolyA_DBv3.2](https://exon.apps.wistar.org/polya_db/v3/), then perform APA analysis.
 
 ## Authors
 [Shan Yu](https://github.com/ShanYu-bioinfo/), [Luyang Wang](https://github.com/wly00001), [Bin Tian](https://www.wistar.org/our-scientists/bin-tian/).
