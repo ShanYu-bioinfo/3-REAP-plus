@@ -220,6 +220,7 @@ done
 `${work_path}/s6_LAP/PAS_quant/cluster.all.reads.csv` is the PAS count table.
 
 bigwig files are under `${work_path}/s7_bigwig`. We recommend `PASS_bw_LAP24_PAS` or `PASS_bw_LAP24` for PAS usage visualization. `mapped_read` is for all aligned R2 reads .`PASS_bw_LAP24` is for PAS supporting (PASS) reads. `PASS_bw_LAP24_positon` is for PASS LAPs. `PASS_bw_LAP24_PAS` is for detected PASs. 
+
 ![bw](./image/bw.png)
 
 Some QC files: `${work_path}/s3_star_align/stats_STAR_summary.csv`, `${work_path}/s5_R2_bed/stats_deduped_aligned_R2_reads.txt`, `${work_path}/s6_LAP/*_stats.csv`, `*_CIGAR_distrib.pdf` and `*_LAP_polyAdb3_distance.pdf`.
