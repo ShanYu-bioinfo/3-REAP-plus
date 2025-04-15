@@ -72,10 +72,10 @@ while IFS=$' \t\r\n' read -r sample; do
     echo $sample
     outpath=${work_path}/s2_fastq_cutadapt/${sample}
     mkdir -p ${outpath}
-    cutadapt --quiet -j 24 -m 18 -O 10 -g "polyT=T{20,}" -n 2 ${sample}/${sample}_R2.fastq.gz | \
-    cutadapt --quiet -j 24 -m 18 -O 3 --nextseq-trim=10 -a "rd2Adapter=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT;min_overlap=3;max_error_rate=0.100000" - | \
-    cutadapt --quiet -j 24 -m 18 -O 10 -g "r2polyT=T{10,};max_error_rate=0.20000" - | \
-    cutadapt --quiet -j 24 -m 18 -O 20 -g "rd2Adapter=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT;min_overlap=20" -o ${outpath}/${sample}_R2.fastq.gz --discard-trimmed -
+    cutadapt --quiet -j 24 -m 18 -O 3 --nextseq-trim=10 -a "rd2Adapter=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT;min_overlap=3;max_error_rate=0.100000" ${sample}/${sample}_R2.fastq.gz | \
+    cutadapt --quiet -j 24 -m 18 -O 20 -g "rd2Adapter=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT;min_overlap=20" -o ${outpath}/${sample}_R2_trimAdapt.fastq.gz --discard-trimmed -
+    ### Reverse reads contain 5'Ts, remove remaining 5'Ts before the alignment
+    python ${script_path}/trim_N-5T_fq.py --rawfastq ${outpath}/${sample}_R2_trimAdapt.fastq.gz --out_dir ${outpath} --random_NT_len 0
 done < $sample_file
 ```
 ### step 3. Genome alignment using paired reads
@@ -90,7 +90,7 @@ nrThreads=12 # cores
 inpath=${work_path}/s2_fastq_cutadapt
 outpath=${work_path}/s2_fastq_cutadapt_pair; mkdir -p ${outpath}
 while IFS=$' \t\r\n' read -r sample; do
-repair.sh in1=${inpath}/${sample}/${sample}_R1.fastq.gz in2=${inpath}/${sample}/${sample}_R2.fastq.gz \
+repair.sh overwrite=t in1=${inpath}/${sample}/${sample}_R1.fastq.gz in2=${inpath}/${sample}/${sample}_R2_trimAdapt.5Ttrimmed.fastq.gz \
            out1=${outpath}/${sample}/${sample}_R1.fastq.gz out2=${outpath}/${sample}/${sample}_R2.fastq.gz outs=${outpath}/${sample}/${sample}_unpaired.fastq.gz \
            repair
 done < $sample_file
