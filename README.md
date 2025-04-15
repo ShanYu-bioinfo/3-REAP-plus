@@ -15,6 +15,9 @@ If you have problem, please contact Shan Yu, syu@wistar.org, Bin Tian Lab @ The 
 ### R packages
 tidyverse, dplyr, plyranges, GenomicRanges, GenomicAlignments, ggplot2, patchwork
 
+### python module
+argparse, os, gzip, re, Bio
+
 ### Files
 Genome reference, including fasta, chrom.sizes
 
