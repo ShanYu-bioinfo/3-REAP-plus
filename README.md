@@ -35,6 +35,7 @@ If your reads have UMI, extract them to the read names. Notice the UMI sequences
 This example uses QuantSeq-Pool data, with a 10 nt UMI located in read2. **Please adjust the parameters as needed to accommodate your specific dataset.**
 
 ```shell
+cd $fastq_path
 while IFS=$' \t\r\n' read -r sample; do
 	outpath=${work_path}/s1_fastq_umi/${sample}
 	mkdir -p ${outpath}
