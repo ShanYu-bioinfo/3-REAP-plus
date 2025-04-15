@@ -131,9 +131,9 @@ inpath=${work_path}/s3_star_align
 
 while IFS=$' \t\r\n' read -r sample; do
 outpath=${work_path}/s4_bam_dedup/${sample}; mkdir -p ${outpath}
-    if [ ! -f $inpath/$sample/Aligned.sortedByCoord.out.bam.bai ]; then
-        samtools index ${inpath}/${sample}/Aligned.sortedByCoord.out.bam
-    fi
+if [ ! -f "$inpath/$sample/Aligned.sortedByCoord.out.bam.bai" ] || [ "$inpath/$sample/Aligned.sortedByCoord.out.bam" -nt "$inpath/$sample/Aligned.sortedByCoord.out.bam.bai" ]; then
+    samtools index "${inpath}/${sample}/Aligned.sortedByCoord.out.bam"
+fi
 
 umi_tools dedup --paired -I ${inpath}/${sample}/Aligned.sortedByCoord.out.bam -S ${outpath}/${sample}.dedup.bam \
 --multimapping-detection-method=NH --output-stats=${outpath}/deduplicated.txt --log=${outpath}/deduplication.log
