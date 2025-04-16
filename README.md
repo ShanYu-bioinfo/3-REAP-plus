@@ -35,7 +35,7 @@ sample_file=/your/sample_name/table/path/sample.txt
 
 nrThreads=12 # cores
 
-star_index_path=/star/index/path/STAR_index_hg38 # for Step 3, STAR index
+star_index_path=/star/index/path/STAR_index_hg38 # for Step 3, STAR index. # If you have no star index, please build one first.
 refPAS_file=/path/PolyA_DBv3.2/human/human.PAS.hg38.txt # for Step 6, PAS annotation file from PolyA_DBv3.2
 chromsizes=/genome/reference/hg38.chrom.sizes # for Step 7, Chromosome sizes file
 ```
