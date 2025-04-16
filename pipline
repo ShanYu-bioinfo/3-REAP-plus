@@ -5,6 +5,12 @@ fastq_path=/your/fastq_or_fq.gz/path
 work_path=/your/output/path
 sample_file=/your/sample_name/table/path/sample.txt
 
+nrThreads=12 # cores
+
+star_index_path=/star/index/path/STAR_index_hg38 # for Step 3, STAR index. # If you have no star index, please build one first.
+refPAS_file=/path/PolyA_DBv3.2/human/human.PAS.hg38.txt # for Step 6, PAS annotation file from PolyA_DBv3.2
+chromsizes=/genome/reference/hg38.chrom.sizes # for Step 7, Chromosome sizes file
+
 #=============================================================
 ### step 1. UMI extraction
 #=============================================================
@@ -38,10 +44,10 @@ while IFS=$' \t\r\n' read -r sample; do
     echo $sample
     outpath=${work_path}/s2_fastq_cutadapt/${sample}
     mkdir -p ${outpath}
-    cutadapt --quiet -j 24 -m 18 -O 10 -g "polyT=T{20,}" -n 2 ${sample}/${sample}_R2.fastq.gz | \
-    cutadapt --quiet -j 24 -m 18 -O 3 --nextseq-trim=10 -a "rd2Adapter=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT;min_overlap=3;max_error_rate=0.100000" - | \
-    cutadapt --quiet -j 24 -m 18 -O 10 -g "r2polyT=T{10,};max_error_rate=0.20000" - | \
-    cutadapt --quiet -j 24 -m 18 -O 20 -g "rd2Adapter=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT;min_overlap=20" -o ${outpath}/${sample}_R2.fastq.gz --discard-trimmed -
+    cutadapt --quiet -j 24 -m 18 -O 3 --nextseq-trim=10 -a "rd2Adapter=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT;min_overlap=3;max_error_rate=0.100000" ${sample}/${sample}_R2.fastq.gz | \
+    cutadapt --quiet -j 24 -m 18 -O 20 -g "rd2Adapter=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT;min_overlap=20" -o ${outpath}/${sample}_R2_trimAdapt.fastq.gz --discard-trimmed -
+    ### Reverse reads contain 5'Ts, remove remaining 5'Ts before the alignment
+    python ${script_path}/trim_N-5T_fq.py --rawfastq ${outpath}/${sample}_R2_trimAdapt.fastq.gz --out_dir ${outpath} --random_NT_len 0
 done < $sample_file
 
 #=============================================================
@@ -49,14 +55,12 @@ done < $sample_file
 #=============================================================
 # Since the fastq files were preprocessed separately, they need to be repaired to re-establish read pairing before alignment. repair.sh is a tool of bbmap.
 # If you have no star index, please build one first.
-# star_index_path=/star/index/path/STAR_index_hg38
-nrThreads=12 # cores
 
 # pair reads repair
 inpath=${work_path}/s2_fastq_cutadapt
 outpath=${work_path}/s2_fastq_cutadapt_pair; mkdir -p ${outpath}
 while IFS=$' \t\r\n' read -r sample; do
-repair.sh in1=${inpath}/${sample}/${sample}_R1.fastq.gz in2=${inpath}/${sample}/${sample}_R2.fastq.gz \
+repair.sh overwrite=t in1=${inpath}/${sample}/${sample}_R1.fastq.gz in2=${inpath}/${sample}/${sample}_R2_trimAdapt.5Ttrimmed.fastq.gz \
            out1=${outpath}/${sample}/${sample}_R1.fastq.gz out2=${outpath}/${sample}/${sample}_R2.fastq.gz outs=${outpath}/${sample}/${sample}_unpaired.fastq.gz \
            repair
 done < $sample_file
@@ -95,9 +99,9 @@ inpath=${work_path}/s3_star_align
 
 while IFS=$' \t\r\n' read -r sample; do
 outpath=${work_path}/s4_bam_dedup/${sample}; mkdir -p ${outpath}
-    if [ ! -f $inpath/$sample/Aligned.sortedByCoord.out.bam.bai ]; then
-        samtools index ${inpath}/${sample}/Aligned.sortedByCoord.out.bam
-    fi
+if [ ! -f "$inpath/$sample/Aligned.sortedByCoord.out.bam.bai" ] || [ "$inpath/$sample/Aligned.sortedByCoord.out.bam" -nt "$inpath/$sample/Aligned.sortedByCoord.out.bam.bai" ]; then
+    samtools index "${inpath}/${sample}/Aligned.sortedByCoord.out.bam"
+fi
 
 umi_tools dedup --paired -I ${inpath}/${sample}/Aligned.sortedByCoord.out.bam -S ${outpath}/${sample}.dedup.bam \
 --multimapping-detection-method=NH --output-stats=${outpath}/deduplicated.txt --log=${outpath}/deduplication.log
