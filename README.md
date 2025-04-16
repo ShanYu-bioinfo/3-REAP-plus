@@ -24,7 +24,7 @@ Genome reference, including fasta, chrom.sizes
 PAS database table: The PAS reference used in this pipeline is derived from [PolyA_DBv3.2](https://exon.apps.wistar.org/polya_db/v3/). Our fourth version of the database will be released soon—please stay tuned!
 
 ## Pipeline
-### Set your work path
+### Set the working directories and specify input files
 Copy the module scripts in script_path.
 All output files will be generated under work_path.
 ```
@@ -32,6 +32,12 @@ script_path=/your/scripts/path
 fastq_path=/your/fastq_or_fq.gz/path
 work_path=/your/output/path
 sample_file=/your/sample_name/table/path/sample.txt
+
+nrThreads=12 # cores
+
+star_index_path=/star/index/path/STAR_index_hg38 # for Step 3, STAR index
+refPAS_file=/path/PolyA_DBv3.2/human/human.PAS.hg38.txt # for Step 6, PAS annotation file from PolyA_DBv3.2
+chromsizes=/genome/reference/hg38.chrom.sizes # for Step 7, Chromosome sizes file
 ```
 ### Step 1. UMI extraction
 If your reads have UMI, extract them to the read names. Notice the UMI sequences will be removed from reads in the same time.
@@ -81,16 +87,13 @@ while IFS=$' \t\r\n' read -r sample; do
     python ${script_path}/trim_N-5T_fq.py --rawfastq ${outpath}/${sample}_R2_trimAdapt.fastq.gz --out_dir ${outpath} --random_NT_len 0
 done < $sample_file
 ```
-`--random_NT_len`: *int*  Specifies the length of the random sequence (e.g., UMI) that appears before the polyT sequence in the reverse read.  For example, if you did **not** remove the UMI using `umi_tools extract` during Step 1, you should provide its length here.  Note that `umi_tools extract` can extract the UMI, append it to the read ID, and simultaneously remove it from the original sequence.
+`--random_NT_len`: *int*. Specifies the length of the random sequence (e.g., UMI) that appears before the polyT sequence in the reverse read.  For example, if you did **not** remove the UMI using `umi_tools extract` during Step 1, you should provide its length here.  Note that `umi_tools extract` can extract the UMI, append it to the read ID, and simultaneously remove it from the original sequence.
 
 ### Step 3. Genome alignment using paired reads
 Since the fastq files were preprocessed separately, they need to be repaired to re-establish read pairing before alignment. repair.sh is a tool of bbmap.
 If you have no star index, please build one first.
 Lenient alignment parameters were used for alignment, because the reverse reads had low sequencing quality scores, and many reads became much shorter after adapter and polyT trimming.
 ```shell
-star_index_path=/star/index/path/STAR_index_hg38
-nrThreads=12 # cores
-
 # pair reads repair
 inpath=${work_path}/s2_fastq_cutadapt
 outpath=${work_path}/s2_fastq_cutadapt_pair; mkdir -p ${outpath}
@@ -145,7 +148,6 @@ done < $sample_file
 ### Step 5. BAM file to BED
 Extract R2 reads that are successfully paired and aligned to the reference genome from the BAM file, then convert them to BED format.
 ```shell
-nrThreads=12 # cores
 outdir=${work_path}/s5_R2_bed; mkdir -p $outdir; cd $outdir
 bam_path=${work_path}/s4_bam_dedup
 
@@ -167,7 +169,6 @@ wc -l *.sorted.bed >> stats_deduped_aligned_R2_reads.txt
 `-dist 24`: Assign LAPs to PASs in PolyA_DB within a ±24-nt window.
 
 ```shell
-refPAS_file=/PolyA_DBv3.2/human/human.PAS.hg38.txt
 indir=${work_path}/s5_R2_bed
 outdir=${work_path}/s6_LAP; mkdir -p $outdir
 
@@ -183,7 +184,6 @@ Rscript ${script_path}/combine_all_sample_PAS_count_tables_sy.R -csv ./ -out ./c
 
 ### Step 7. Generating bigwig files for PAS usage visualization
 ```shell
-chromsizes=/genome/reference/hg38.chrom.sizes # Chromosome sizes file
 indir=${work_path}/s6_LAP
 
 for type in PASS_bw_LAP24 PASS_bw_LAP24_positon PASS_bw_LAP24_PAS mapped_read
