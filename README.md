@@ -15,7 +15,7 @@ If you have problem, please contact Shan Yu, syu@wistar.org, Bin Tian Lab @ The 
 ### R packages
 tidyverse, dplyr, plyranges, GenomicRanges, GenomicAlignments, ggplot2, patchwork
 
-### python module
+### python modules
 argparse, os, gzip, re, Bio
 
 ### Files
@@ -33,7 +33,7 @@ fastq_path=/your/fastq_or_fq.gz/path
 work_path=/your/output/path
 sample_file=/your/sample_name/table/path/sample.txt
 ```
-### step 1. UMI extraction
+### Step 1. UMI extraction
 If your reads have UMI, extract them to the read names. Notice the UMI sequences will be removed from reads in the same time.
 This example uses QuantSeq-Pool data, with a 10 nt UMI located in read2. **Please adjust the parameters as needed to accommodate your specific dataset.**
 
@@ -50,7 +50,7 @@ while IFS=$' \t\r\n' read -r sample; do
 	--read2-out=${outpath}/${sample}_R2.fastq.gz
 done < $sample_file
 ```
-### step 2. Trimming adapters and polyA/polyT sequences
+### Step 2. Trimming adapters and polyA/polyT sequences
 Given the distinct sequence characteristics of read1 and read2 — reverse reads generally contain polyT—and their differences in sequencing quality, we process them separately.
 Please set the adapter sequences according to your data.
 **It's important to ensure that polyA/polyT sequences have been removed from your FASTQ output by reviewing the reads and running [FastQC](https://github.com/s-andrews/FastQC).**
@@ -81,7 +81,9 @@ while IFS=$' \t\r\n' read -r sample; do
     python ${script_path}/trim_N-5T_fq.py --rawfastq ${outpath}/${sample}_R2_trimAdapt.fastq.gz --out_dir ${outpath} --random_NT_len 0
 done < $sample_file
 ```
-### step 3. Genome alignment using paired reads
+`--random_NT_len`: *int*  Specifies the length of the random sequence (e.g., UMI) that appears before the polyT sequence in the reverse read.  For example, if you did **not** remove the UMI using `umi_tools extract` during Step 1, you should provide its length here.  Note that `umi_tools extract` can extract the UMI, append it to the read ID, and simultaneously remove it from the original sequence.
+
+### Step 3. Genome alignment using paired reads
 Since the fastq files were preprocessed separately, they need to be repaired to re-establish read pairing before alignment. repair.sh is a tool of bbmap.
 If you have no star index, please build one first.
 Lenient alignment parameters were used for alignment, because the reverse reads had low sequencing quality scores, and many reads became much shorter after adapter and polyT trimming.
@@ -125,7 +127,7 @@ for logfile in */*Log.final.out; do
     echo "$sample,$total_reads,$uniquely_mapped,$multiple_mapped,$unmapped_mismatches,$unmapped_short,$unmapped_other" >> $output_file
 done
 ```
-### step 4. Removing PCR duplication
+### Step 4. Removing PCR duplication
 ```shell
 inpath=${work_path}/s3_star_align
 
@@ -140,7 +142,7 @@ umi_tools dedup --paired -I ${inpath}/${sample}/Aligned.sortedByCoord.out.bam -S
 done < $sample_file
 ```
 
-### step 5. BAM file to BED
+### Step 5. BAM file to BED
 Extract R2 reads that are successfully paired and aligned to the reference genome from the BAM file, then convert them to BED format.
 ```shell
 nrThreads=12 # cores
@@ -157,7 +159,7 @@ done < $sample_file
 wc -l *.sorted.bed >> stats_deduped_aligned_R2_reads.txt
 ```
 
-### step 6. Defining LAPs (last aligned positions) and matching PASs
+### Step 6. Defining LAPs (last aligned positions) and matching PASs
 ![LAP](./image/LAP.png)
 
 `-misM 2`: Allow up to 2 nt soft clipping at the ends of aligned reads.
@@ -179,7 +181,7 @@ mv ${work_path}/s6_LAP/*cluster.all.reads.csv ./
 Rscript ${script_path}/combine_all_sample_PAS_count_tables_sy.R -csv ./ -out ./cluster.all.reads.csv
 ```
 
-### step 7. Generating bigwig files for PAS usage visualization
+### Step 7. Generating bigwig files for PAS usage visualization
 ```shell
 chromsizes=/genome/reference/hg38.chrom.sizes # Chromosome sizes file
 indir=${work_path}/s6_LAP
