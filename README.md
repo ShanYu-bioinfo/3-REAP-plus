@@ -5,6 +5,7 @@ Poly(A) site (PAS) detection and quantification using paired reads of bulk 3'-se
 If you have problem, please contact Shan Yu, syu@wistar.org, Bin Tian Lab @ The Wistar Institute.
 
 ![workflow](./image/workflow.png)
+
 **LAP** - Last aligned position, see Step 6.
 
 ## Introduction
