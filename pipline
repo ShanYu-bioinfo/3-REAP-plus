@@ -60,7 +60,7 @@ done < $sample_file
 inpath=${work_path}/s2_fastq_cutadapt
 outpath=${work_path}/s2_fastq_cutadapt_pair; mkdir -p ${outpath}
 while IFS=$' \t\r\n' read -r sample; do
-repair.sh overwrite=t in1=${inpath}/${sample}/${sample}_R1.fastq.gz in2=${inpath}/${sample}/${sample}_R2_trimAdapt.fastq.gz \
+repair.sh overwrite=t in1=${inpath}/${sample}/${sample}_R1.fastq.gz in2=${inpath}/${sample}/${sample}_R2_trimAdapt.5Ttrimmed.fastq.gz \
            out1=${outpath}/${sample}/${sample}_R1.fastq.gz out2=${outpath}/${sample}/${sample}_R2.fastq.gz outs=${outpath}/${sample}/${sample}_unpaired.fastq.gz \
            repair
 done < $sample_file
