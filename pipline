@@ -116,7 +116,7 @@ outdir=${work_path}/s5_R2_bed; mkdir -p $outdir
 cd $outdir
 bam_path=${work_path}/s4_bam_dedup
 while IFS=$' \t\r\n' read -r sample; do
-    samtools view -f 128 -b $mainpath/${bam_path}/${sample}/${sample}.dedup.bam > $mainpath/${bam_path}/${sample}/${sample}.dedup_R2.bam
+    samtools view -f 128 -b ${bam_path}/${sample}/${sample}.dedup.bam > ${bam_path}/${sample}/${sample}.dedup_R2.bam
     samtools index ${bam_path}/${sample}/${sample}.dedup_R2.bam
     bedtools bamtobed -cigar -i ${bam_path}/${sample}/${sample}.dedup_R2.bam > ${sample}.dedup_R2.bed
     sort -k 1,1 ${sample}.dedup_R2.bed > ${sample}.dedup_R2.sorted.bed
