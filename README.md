@@ -181,8 +181,8 @@ done < $sample_file
 # combine the PAS quantification table
 mkdir -p ${work_path}/s6_LAP/PAS_quant; cd ${work_path}/s6_LAP/PAS_quant
 mv ${work_path}/s6_LAP/*cluster.all.reads.csv ./
-Rscript ${script_path}/combine_all_sample_PAS_count_tables_sy.R -csv ./ -out ./cluster.all.reads.csv
-Rscript ${script_path}/combine_all_sample_PAS_count_tables_sy.R -csv ${outdir} -out ./stats_PAS.csv
+Rscript ${script_path}/combine_all_sample_PAS_count_tables.R -csv ./ -out ./cluster.all.reads.csv
+Rscript ${script_path}/combine_all_sample_PAS_count_tables.R -csv ${outdir} -out ./stats_PAS.csv
 ```
 
 ### Step 7. Generating bigwig files for PAS usage visualization
