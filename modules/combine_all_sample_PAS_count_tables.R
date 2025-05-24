@@ -15,7 +15,8 @@ csv_dir <- ifelse(is.na(args_v["csv"]), "_csv_", args_v["csv"])
 out_dir <- ifelse(is.na(args_v["out"]), "_out_", args_v["out"])
 
 
-filenames <- list.files(csv_dir, pattern="*.csv", full.names=TRUE)
+filenames <- list.files(csv_dir, pattern="*.all.reads.csv$", full.names=TRUE)
+print(filenames)
 ldf <- lapply(filenames, read.csv)
 
 cname=colnames(ldf[[1]])[1] # sy
